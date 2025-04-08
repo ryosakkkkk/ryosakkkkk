@@ -2633,6 +2633,122 @@ function animar(tiempo) {
         ctx.fillStyle = "#aaaaaa";
         ctx.arc(lunaX, lunaY, planeta.tamaño * 0.2, 0, Math.PI * 2);
         ctx.fill();
+// Dentro de la función animar, continuando con el dibujo de las lunas:
 
         // Brillo de la luna
-        const brilloLuna = ctx.createRadialG
+        const brilloLuna = ctx.createRadialGradient(
+          lunaX - planeta.tamaño * 0.1, 
+          lunaY - planeta.tamaño * 0.1, 
+          0,
+          lunaX, 
+          lunaY, 
+          planeta.tamaño * 0.2
+        );
+        brilloLuna.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+        brilloLuna.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        ctx.beginPath();
+        ctx.fillStyle = brilloLuna;
+        ctx.arc(lunaX, lunaY, planeta.tamaño * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cráteres en la luna
+        if (variables.detectadaCalidad !== 'baja') {
+          for (let j = 0; j < 3; j++) {
+            const anguloCrater = Math.random() * Math.PI * 2;
+            const distanciaCrater = Math.random() * planeta.tamaño * 0.15;
+            ctx.beginPath();
+            ctx.fillStyle = `rgba(0, 0, 0, ${0.2 + Math.random() * 0.2})`;
+            ctx.arc(
+              lunaX + Math.cos(anguloCrater) * distanciaCrater,
+              lunaY + Math.sin(anguloCrater) * distanciaCrater,
+              Math.random() * 2 + 1,
+              0,
+              Math.PI * 2
+            );
+            ctx.fill();
+          }
+        }
+      }
+
+      // Actualizar nubes y tormentas si existen
+      if (planeta.nubes) {
+        planeta.nubes.forEach(nube => {
+          nube.ángulo += nube.velocidad;
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(255, 255, 255, ${0.5 + Math.sin(nube.ángulo) * 0.3})`;
+          ctx.arc(
+            planetaX + nube.x * planeta.tamaño,
+            planetaY + nube.y * planeta.tamaño,
+            nube.radio * planeta.tamaño,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        });
+      }
+    });
+
+    // Dibujar partículas y efectos especiales
+    variables.particulas = variables.particulas.filter(partícula => {
+      partícula.x += partícula.velocidadX;
+      partícula.y += partícula.velocidadY;
+      partícula.vida -= partícula.desvanecimiento;
+
+      if (partícula.esCorazon) {
+        // Animación de corazones rotando
+        ctx.save();
+        ctx.translate(partícula.x, partícula.y);
+        ctx.rotate(partícula.rotacion);
+        ctx.fillStyle = partícula.color;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(-10, -15, -25, -10, -25, 5);
+        ctx.bezierCurveTo(-25, 20, 0, 30, 0, 40);
+        ctx.bezierCurveTo(0, 30, 25, 20, 25, 5);
+        ctx.bezierCurveTo(25, -10, 10, -15, 0, 0);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.fillStyle = partícula.color;
+        ctx.beginPath();
+        ctx.arc(partícula.x, partícula.y, partícula.tamaño, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      return partícula.vida > 0;
+    });
+
+    // Dibujar efectos especiales
+    variables.efectosEspeciales = variables.efectosEspeciales.filter(efecto => {
+      efecto.tiempo += deltaTime;
+      const progreso = efecto.tiempo / efecto.duracion;
+
+      // Actualizar partículas del efecto
+      efecto.particulas.forEach(partícula => {
+        partícula.x += partícula.velocidadX;
+        partícula.y += partícula.velocidadY;
+        partícula.vida -= 0.01;
+      });
+
+      // Dibujar partículas
+      efecto.particulas.forEach(partícula => {
+        ctx.fillStyle = partícula.color;
+        ctx.beginPath();
+        ctx.arc(partícula.x, partícula.y, partícula.tamaño, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      return efecto.tiempo < efecto.duracion;
+    });
+
+    // Continuar el bucle de animación
+    variables.animationFrameId = requestAnimationFrame(animar);
+  } catch (error) {
+    console.error("Error en animación:", error);
+    cancelAnimationFrame(variables.animationFrameId);
+  }
+}
+
+// Iniciar la aplicación
+inicializar();
